@@ -2,67 +2,67 @@ package com.example.agendacomtactos
 
 import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.net.Uri
-import android.os.Build
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Environment
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.content.FileProvider
-import java.io.File
-import java.io.IOException
-import java.text.SimpleDateFormat
+import androidx.core.view.drawToBitmap
+import java.io.ByteArrayOutputStream
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
+    lateinit var et_nombre: EditText
+    lateinit var et_apellido: EditText
+    lateinit var et_phone: EditText
+    lateinit var et_mail: EditText
+
     var MY_PERMISSIONS_REQUEST_CAMARA = 0
     val REQUEST_IMAGE_CAPTURE = 1
-    val REQUEST_TAKE_PHOTO = 2
-
-    lateinit var currentPhotoPath: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         imageView = findViewById(R.id.imageView)
-        var et_nombre = findViewById<EditText>(R.id.editTextName)
-        var et_apellido = findViewById<EditText>(R.id.editTextSurname)
-        var et_phone = findViewById<EditText>(R.id.editTextPhone)
-        var et_mail = findViewById<EditText>(R.id.editTextMail)
+        et_nombre = findViewById<EditText>(R.id.editTextName)
+        et_apellido = findViewById<EditText>(R.id.editTextSurname)
+        et_phone = findViewById<EditText>(R.id.editTextPhone)
+        et_mail = findViewById<EditText>(R.id.editTextMail)
+
+        var datos = ArrayList<ContentValues>()
 
         var btnFoto = findViewById<Button>(R.id.btnFoto)
         btnFoto.setOnClickListener {
             if (checkPermissions()) {
                 takePicture()
+                /*val bitmap = (imageView.drawable as BitmapDrawable).bitmap
+                val stream = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
+                val image = stream.toByteArray()
+
+                val row = ContentValues().apply {
+                    put(ContactsContract.CommonDataKinds.Photo.PHOTO, image)
+                    put(ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                }
+                datos = arrayListOf(row)*/
             } else {
                 requestPermissions()
             }
         }
-
-        var intentContacto = Intent(ContactsContract.Intents.Insert.ACTION).apply {
-            type = ContactsContract.RawContacts.CONTENT_TYPE
-        }
-
-        intentContacto.apply {
-            putExtra(ContactsContract.Intents.Insert.NAME, et_nombre.text.toString())
-            putExtra(ContactsContract.Intents.Insert.PHONETIC_NAME, et_apellido.text.toString())
-            putExtra(ContactsContract.Intents.Insert.PHONE, et_phone.text.toString())
-            putExtra(ContactsContract.Intents.Insert.EMAIL, et_mail.text.toString())
-        }
-
-        startActivity(intent)
     }
 
     private fun requestPermissions() {
@@ -105,42 +105,35 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun dispatchTakePictureIntent() {
-        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            // Ensure that there's a camera activity to handle the intent
-            takePictureIntent.resolveActivity(packageManager)?.also {
-                // Create the File where the photo should go
-                val photoFile: File? = try {
-                    createImageFile()
-                } catch (ex: IOException) {
-                    // Error occurred while creating the File
-                    null
-                }
-                // Continue only if the File was successfully created
-                photoFile?.also {
-                    val photoURI: Uri = FileProvider.getUriForFile(
-                            this,
-                            "com.example.android.agemdaContactos",
-                            it
-                    )
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
-                    startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO)
-                }
-            }
-        }
+    private fun getScreenViewBitmap(view: View): Bitmap {
+        val specSize = View.MeasureSpec.makeMeasureSpec(
+                0 /* any */, View.MeasureSpec.UNSPECIFIED)
+        view.measure(specSize, specSize)
+        val bitmap = Bitmap.createBitmap(view.measuredWidth,
+                view.measuredHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        view.layout(view.left, view.top, view.right, view.bottom)
+        view.draw(canvas)
+        return bitmap
     }
 
-    private fun createImageFile(): File {
-        // Create an image file name
-        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-        val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        return File.createTempFile(
-                "JPEG_${timeStamp}_", /* prefix */
-                ".jpg", /* suffix */
-                storageDir /* directory */
-        ).apply {
-            // Save a file: path for use with ACTION_VIEW intents
-            currentPhotoPath = absolutePath
+    fun guardar(view: View) {
+        var nombre = et_nombre.text.toString()
+        var apellido = et_apellido.text.toString()
+        var phone =  et_phone.text.toString()
+        var mail = et_mail.text.toString()
+
+        var intentContacto = Intent(Intent.ACTION_INSERT_OR_EDIT).apply {
+            type = ContactsContract.Contacts.CONTENT_ITEM_TYPE
+
+            putExtra(ContactsContract.Intents.Insert.NAME, nombre)
+            putExtra(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, apellido)
+            putExtra(ContactsContract.Intents.Insert.PHONE, phone)
+            putExtra(ContactsContract.Intents.Insert.EMAIL, mail)
+            putExtra(ContactsContract.CommonDataKinds.Photo.PHOTO, imageView.drawToBitmap())
         }
+
+        startActivity(intentContacto)
     }
+
 }
