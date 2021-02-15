@@ -6,9 +6,7 @@ import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.MediaStore
@@ -17,10 +15,10 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.view.drawToBitmap
-import java.io.ByteArrayOutputStream
-import java.util.*
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var imageView: ImageView
@@ -42,23 +40,11 @@ class MainActivity : AppCompatActivity() {
         et_phone = findViewById<EditText>(R.id.editTextPhone)
         et_mail = findViewById<EditText>(R.id.editTextMail)
 
-        var datos = ArrayList<ContentValues>()
 
         var btnFoto = findViewById<Button>(R.id.btnFoto)
         btnFoto.setOnClickListener {
             if (checkPermissions()) {
                 takePicture()
-                /*val bitmap = (imageView.drawable as BitmapDrawable).bitmap
-                val stream = ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.PNG, 90, stream)
-                val image = stream.toByteArray()
-
-                val row = ContentValues().apply {
-                    put(ContactsContract.CommonDataKinds.Photo.PHOTO, image)
-                    put(ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-                }
-                datos = arrayListOf(row)*/
             } else {
                 requestPermissions()
             }
@@ -105,23 +91,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getScreenViewBitmap(view: View): Bitmap {
-        val specSize = View.MeasureSpec.makeMeasureSpec(
-                0 /* any */, View.MeasureSpec.UNSPECIFIED)
-        view.measure(specSize, specSize)
-        val bitmap = Bitmap.createBitmap(view.measuredWidth,
-                view.measuredHeight, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        view.layout(view.left, view.top, view.right, view.bottom)
-        view.draw(canvas)
-        return bitmap
-    }
-
     fun guardar(view: View) {
         var nombre = et_nombre.text.toString()
         var apellido = et_apellido.text.toString()
         var phone =  et_phone.text.toString()
         var mail = et_mail.text.toString()
+
+        val bitmap = (imageView.drawable as BitmapDrawable).bitmap
+
 
         var intentContacto = Intent(Intent.ACTION_INSERT_OR_EDIT).apply {
             type = ContactsContract.Contacts.CONTENT_ITEM_TYPE
@@ -130,7 +107,7 @@ class MainActivity : AppCompatActivity() {
             putExtra(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, apellido)
             putExtra(ContactsContract.Intents.Insert.PHONE, phone)
             putExtra(ContactsContract.Intents.Insert.EMAIL, mail)
-            putExtra(ContactsContract.CommonDataKinds.Photo.PHOTO, imageView.drawToBitmap())
+            putExtra(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmap)
         }
 
         startActivity(intentContacto)
