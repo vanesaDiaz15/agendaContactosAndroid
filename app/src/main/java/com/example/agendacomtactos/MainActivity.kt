@@ -2,7 +2,6 @@ package com.example.agendacomtactos
 
 import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -17,7 +16,6 @@ import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.view.drawToBitmap
 
 
 class MainActivity : AppCompatActivity() {
@@ -103,8 +101,7 @@ class MainActivity : AppCompatActivity() {
         var intentContacto = Intent(Intent.ACTION_INSERT_OR_EDIT).apply {
             type = ContactsContract.Contacts.CONTENT_ITEM_TYPE
 
-            putExtra(ContactsContract.Intents.Insert.NAME, nombre)
-            putExtra(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, apellido)
+            putExtra(ContactsContract.Intents.Insert.NAME, "$nombre $apellido")
             putExtra(ContactsContract.Intents.Insert.PHONE, phone)
             putExtra(ContactsContract.Intents.Insert.EMAIL, mail)
             putExtra(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmap)
